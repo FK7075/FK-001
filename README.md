@@ -1,2 +1,46 @@
-# FK-001
-online 0.0.1
+Drupal for Azure App Service  Deploy to Azure
+
+This template support MySQL in-app feature on App service. Click on Deploy to Azure button above to start deployment.
+
+Once the app is successfully deployed and the drupal installer has completed the installation , update settings.php to use environement variable whether you are using ClearDB MySQL database or MySQL in-app on Azure app service.
+
+        $connectstr_dbfullhost = '';
+        $connectstr_dbhost = '';
+        $connectstr_dbname = '';
+        $connectstr_dbusername = '';
+        $connectstr_dbpassword = '';
+        foreach ($_SERVER as $key => $value) {
+            if (strpos($key, "MYSQLCONNSTR_") !== 0) {
+                continue;
+            }
+
+            $connectstr_dbfullhost = preg_replace("/^.*Data Source=(.+?);.*$/", "\\1", $value);
+            $connectstr_dbhost = substr($connectstr_dbfullhost,0,strpos($connectstr_dbhost,":"));
+            $connectstr_dbname = preg_replace("/^.*Database=(.+?);.*$/", "\\1", $value);
+            $connectstr_dbusername = preg_replace("/^.*User Id=(.+?);.*$/", "\\1", $value);
+            $connectstr_dbpassword = preg_replace("/^.*Password=(.+?)$/", "\\1", $value);
+        }
+
+         $connectstr_port =   getenv('WEBSITE_MYSQL_PORT');
+         if (empty($connectstr_port)){
+               $connectstr_port= 3306;
+         }
+           
+        $databases['default']['default'] = array (
+          'database' => $connectstr_dbname,
+          'username' => $connectstr_dbusername,
+          'password' => $connectstr_dbpassword,
+          'prefix' => '',
+          'host' => $connectstr_dbhost,
+          'port' => $connectstr_port ,
+          'namespace' => 'Drupal\\Core\\Database\\Driver\\mysql',
+          'driver' => 'mysql',
+        );
+
+For the trusted host patterns, you can add code as below to update "\core\lib\Drupal\Core\Site\Settings.php" file:
+
+        $settings['trusted_host_patterns'] = array(
+            '^{trust host URL}$',
+            '^127\.20.\0.\1$',
+            '^localhost$',
+        );
